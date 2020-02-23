@@ -24,6 +24,7 @@ namespace MSFTIdentity.Areas.Identity
                 {
                     options.SignIn.RequireConfirmedAccount = true;
                 }).AddEntityFrameworkStores<MSFTIdentityContext>();
+                
             });
         }
     }

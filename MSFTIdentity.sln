@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSFTIdentity", "MSFTIdentity\MSFTIdentity.csproj", "{B4954286-01B4-44E1-98EF-8A23BB5A8A5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MSFTIdentity", "MSFTIdentity\MSFTIdentity.csproj", "{B4954286-01B4-44E1-98EF-8A23BB5A8A5E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BCABB3DF-0839-447A-B8BB-8DD5B78E2204}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -8,3 +8,16 @@ services:
       MYSQL_ROOT_PASSWORD: example
     ports:
      - 3307:3306
+
+  identity:
+    build: MSFTIdentity
+    restart: always
+    ports: 
+     - 8080:80
+    depends_on: 
+     - db
+    environment:
+     AppSettings__EmailConfig__Server: "${AppSettings__EmailConfig__Server}"
+     AppSettings__EmailConfig__Port: ${AppSettings__EmailConfig__Port}
+     AppSettings__EmailConfig__Username: "${AppSettings__EmailConfig__Username}"
+     AppSettings__EmailConfig__Password: "${AppSettings__EmailConfig__Password}"
