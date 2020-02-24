@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MSFTIdentity.Areas.Identity.Data;
 using MSFTIdentity.Data;
+using MSFTIdentity.Services;
 
 [assembly: HostingStartup(typeof(MSFTIdentity.Areas.Identity.IdentityHostingStartup))]
 namespace MSFTIdentity.Areas.Identity
@@ -24,7 +25,19 @@ namespace MSFTIdentity.Areas.Identity
                 {
                     options.SignIn.RequireConfirmedAccount = true;
                 }).AddEntityFrameworkStores<MSFTIdentityContext>();
-                
+
+                services.AddIdentityServer()
+                .AddOperationalStore(options =>
+                {
+                    options.ConfigureDbContext = options => options.UseMySql(context.Configuration.GetConnectionString("MSFTIdentityContextConnection"));
+                    options.EnableTokenCleanup = true;
+                    options.TokenCleanupInterval = 30;
+                })
+                .AddInMemoryIdentityResources(ResourceConfig.GetIdentityResources())
+                .AddInMemoryApiResources(ResourceConfig.GetApiResources())
+                .AddInMemoryClients(ResourceConfig.GetClients())
+                .AddAspNetIdentity<MSFTIdentityUser>();
+
             });
         }
     }

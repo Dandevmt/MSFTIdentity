@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using MSFTIdentity.Areas.Identity.Data;
+using IdentityServer4.Services;
+using IdentityServer4.Events;
 
 namespace MSFTIdentity.Areas.Identity.Pages.Account
 {
@@ -20,15 +22,21 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
     {
         private readonly UserManager<MSFTIdentityUser> _userManager;
         private readonly SignInManager<MSFTIdentityUser> _signInManager;
+        private readonly IIdentityServerInteractionService _interaction;
+        private readonly IEventService _events;
         private readonly ILogger<LoginModel> _logger;
 
         public LoginModel(SignInManager<MSFTIdentityUser> signInManager, 
             ILogger<LoginModel> logger,
-            UserManager<MSFTIdentityUser> userManager)
+            UserManager<MSFTIdentityUser> userManager,
+            IIdentityServerInteractionService interaction,
+            IEventService events)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _interaction = interaction;
+            _events = events;
         }
 
         [BindProperty]
@@ -78,13 +86,17 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
+                
+
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
+                    var user = await _userManager.FindByEmailAsync(Input.Email);
+                    return await new IdentityServerLoginRedirect(_interaction, _events)
+                        .LoginAndRedirect(returnUrl, user);
                 }
                 if (result.RequiresTwoFactor)
                 {
@@ -97,6 +109,7 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
                 }
                 else
                 {
+                    await _events.RaiseAsync(new UserLoginFailureEvent(Input.Email, "invalid credentials"));
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                     return Page();
                 }

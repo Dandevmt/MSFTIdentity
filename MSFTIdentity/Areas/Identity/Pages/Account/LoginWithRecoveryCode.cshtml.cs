@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Events;
+using IdentityServer4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +19,19 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<MSFTIdentityUser> _signInManager;
         private readonly ILogger<LoginWithRecoveryCodeModel> _logger;
+        private readonly IIdentityServerInteractionService _interaction;
+        private readonly IEventService _events;
 
-        public LoginWithRecoveryCodeModel(SignInManager<MSFTIdentityUser> signInManager, ILogger<LoginWithRecoveryCodeModel> logger)
+        public LoginWithRecoveryCodeModel(
+            SignInManager<MSFTIdentityUser> signInManager, 
+            ILogger<LoginWithRecoveryCodeModel> logger,
+            IIdentityServerInteractionService interaction,
+            IEventService events)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _interaction = interaction;
+            _events = events;
         }
 
         [BindProperty]
@@ -72,7 +82,8 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", user.Id);
-                return LocalRedirect(returnUrl ?? Url.Content("~/"));
+                return await new IdentityServerLoginRedirect(_interaction, _events)
+                        .LoginAndRedirect(returnUrl ?? Url.Content("~/"), user);
             }
             if (result.IsLockedOut)
             {
@@ -82,6 +93,7 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
             else
             {
                 _logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", user.Id);
+                await _events.RaiseAsync(new UserLoginFailureEvent(user.UserName, "invalid credentials"));
                 ModelState.AddModelError(string.Empty, "Invalid recovery code entered.");
                 return Page();
             }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using IdentityServer4.Events;
+using IdentityServer4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +18,20 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
     public class LoginWith2faModel : PageModel
     {
         private readonly SignInManager<MSFTIdentityUser> _signInManager;
+        private readonly IIdentityServerInteractionService _interaction;
+        private readonly IEventService _events;
         private readonly ILogger<LoginWith2faModel> _logger;
 
-        public LoginWith2faModel(SignInManager<MSFTIdentityUser> signInManager, ILogger<LoginWith2faModel> logger)
+        public LoginWith2faModel(
+            SignInManager<MSFTIdentityUser> signInManager, 
+            ILogger<LoginWith2faModel> logger,
+            IIdentityServerInteractionService interaction,
+            IEventService events)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _interaction = interaction;
+            _events = events;
         }
 
         [BindProperty]
@@ -81,7 +91,8 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", user.Id);
-                return LocalRedirect(returnUrl);
+                return await new IdentityServerLoginRedirect(_interaction, _events)
+                        .LoginAndRedirect(returnUrl, user);
             }
             else if (result.IsLockedOut)
             {
@@ -91,6 +102,7 @@ namespace MSFTIdentity.Areas.Identity.Pages.Account
             else
             {
                 _logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", user.Id);
+                await _events.RaiseAsync(new UserLoginFailureEvent(user.UserName, "invalid credentials"));
                 ModelState.AddModelError(string.Empty, "Invalid authenticator code.");
                 return Page();
             }
