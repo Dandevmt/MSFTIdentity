@@ -24,7 +24,24 @@ namespace MSFTIdentity.Areas.Identity
                 {
                     options.SignIn.RequireConfirmedAccount = true;
                 }).AddEntityFrameworkStores<MSFTIdentityContext>();
-                
+
+
+                // Identity Server 4 Setup
+                var builder = services.AddIdentityServer(options =>
+                {
+                    options.Events.RaiseErrorEvents = true;
+                    options.Events.RaiseInformationEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseSuccessEvents = true;
+                })
+                .AddInMemoryIdentityResources(Config.Ids)
+                .AddInMemoryApiResources(Config.Apis)
+                .AddInMemoryClients(Config.Clients)
+                .AddAspNetIdentity<MSFTIdentityUser>();
+
+                // not recommended for production - you need to store your key material somewhere secure
+                builder.AddDeveloperSigningCredential();
+
             });
         }
     }
