@@ -26,17 +26,22 @@ namespace MSFTIdentity.Areas.Identity
                     options.SignIn.RequireConfirmedAccount = true;
                 }).AddEntityFrameworkStores<MSFTIdentityContext>();
 
-                services.AddIdentityServer()
-                .AddOperationalStore(options =>
+
+                // Identity Server 4 Setup
+                var builder = services.AddIdentityServer(options =>
                 {
-                    options.ConfigureDbContext = options => options.UseMySql(context.Configuration.GetConnectionString("MSFTIdentityContextConnection"));
-                    options.EnableTokenCleanup = true;
-                    options.TokenCleanupInterval = 30;
+                    options.Events.RaiseErrorEvents = true;
+                    options.Events.RaiseInformationEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseSuccessEvents = true;
                 })
-                .AddInMemoryIdentityResources(ResourceConfig.GetIdentityResources())
-                .AddInMemoryApiResources(ResourceConfig.GetApiResources())
-                .AddInMemoryClients(ResourceConfig.GetClients())
+                .AddInMemoryIdentityResources(Config.Ids)
+                .AddInMemoryApiResources(Config.Apis)
+                .AddInMemoryClients(Config.Clients)
                 .AddAspNetIdentity<MSFTIdentityUser>();
+
+                // not recommended for production - you need to store your key material somewhere secure
+                builder.AddDeveloperSigningCredential();
 
             });
         }
